@@ -1,0 +1,180 @@
+\subsubsection{Interface.py}
+    This class will be in charge of providing a node's network functionality. An interface represents a connection with a computer network and thus is defined by a key parameter: the IP address. We should stress how an IP address is associated with an interface, \textbf{not} with the host itself. This subtlety will be extremely relevant when dealing with routers.\\
+
+    Another key aspect of interfaces is the role they play in network routes. Even though it is not entirely correct, in our case we can talk about the interface's routes. If we are being precise we would consider routes to be associated to a machine's network stack, not to a given interface. Nonetheless, as the graphs we are to instantiate will always define topologies in such a way that only an interface per host will belong to a given subnet we can indeed associate a route with an interface for a given route will only egress through a specific interface. This distinction will allow us to quickly and univocally query a node's route configuration.\\
+
+    Once an interface is configured it will just support a machine's connections. It is also crucial to note that even though an instance of the \texttt{interface} class is \textbf{not} the same thing as a \textit{veth}, they are intimately related. Instantiating an \texttt{interface} will trigger the creation of a \textit{veth} and deleting the former will also remove the latter. All in all, an interface's lifecycle can be described as:\\
+
+    \begin{enumerate}
+        \item An interface instance is created and the associated \textit{veth} is created as well.
+        \item The interface is assigned an IP address.
+        \item One or more routes are assigned to or deleted from the interface.
+        \item The interface sits idle until it returns to $2$ or $3$ or goes to $5$.
+        \item The interface is removed, which will also remove the corresponding \textit{veth}.
+    \end{enumerate}
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape \_sequences dictionary} containing \texttt{ANSI escape sequences} enabling colored output.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal\_esc ape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The interface Class}
+        This class represents a host's interface.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.host\_name - string}:} Name identifying the host this interface belongs to.
+                \item \textbf{\texttt{self.ip\_range - string}:} Interface's IP and subnet mask in \textit{CIDR} \cite{bib:cidr-notation} format. Ex: \textit{10.0.0.1/24}.
+                \item \textbf{\texttt{self.ip - string}:} Interface's IP address.
+                \item \textbf{\texttt{self.if\_name - string}:} Interface's name. This is equivalent to traditional names like \texttt{enp2s0} or \texttt{wlp3s0} in Linux-based systems. In our case the names will follow a pattern given by \texttt{veth\_+\_-} where \texttt{+} and \texttt{-} are the names of the connected nodes. Note either \texttt{+} or \texttt{-} will be the same as \texttt{self.host\_name}. We would finally like to point out that \texttt{+} and \texttt{-} can be either upper or lowercase, depending on which is the first node to be attached to the links we create.
+                \item \textbf{\texttt{self.subn\_gateway - string}:} IP address of this subnet's gateway, following the same format as \texttt{self.ip}.
+                \item \textbf{\texttt{self.subn - string}:} Interface's subnet given as the network address for said subnet together with the subnet mask in \texttt{CIDR} notation. Ex: \textit{10.0.0.0/24}.
+                \item \textbf{\texttt{self.outbound\_interface - boolean}:} \texttt{True} if the interface's host is allowed to connect to external subnets. \texttt{False} otherwise. Due to how some ICS networks need to isolate some equipment, such as reactor's control systems, we need to know whether a given host is allowed to ``see'' the outside world. Having this information encoded into interfaces allows for a cleaner design when routing the network.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                    \item \texttt{h\_name - string:} The host the interface belongs to.
+                    \item \texttt{if\_name - string:} The interface name
+                    \item \texttt{subnet - string:} The subnet the interface belongs to.
+                    \item \texttt{h\_type - boolean:} \texttt{True} if the interface belongs to a regular node, \texttt{False} otherwise.
+                    \item \texttt{out\_interface - boolean - optional:} \texttt{True} if the node is allowed to ``see'' other subnets, \texttt{False} otherwise.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will initialize the members of an \texttt{interface\_inst} and call the \texttt{\_activate\_iface()} method.
+            \end{enumerate}
+
+        \subparagraph{The \_activate\_iface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method leverages the \texttt{os.system()} function to activate a \textit{veth} interface. The \texttt{string} we pass \texttt{os.system()} is built though the concatenation of several instance attributes. As we usually do, we check whether \texttt{os.system()}'s return code was $0$ to show an informative message to the user.
+            \end{enumerate}
+
+        \subparagraph{The get\_if\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the subnet the interface belongs to in \textit{CIDR} notation.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_if\_ip\_range() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the interface's IP and subnet mask in \textit{CIDR} format.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_if\_ip() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the interface's IP.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_if\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the interface's name.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_routes() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{dictionary/string/string} containing the routes that have been assigned through this interface.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The set\_if\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                    \item \texttt{if\_name - string}
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} Assigns the value of the \texttt{if\_name} parameter to the \texttt{self.if\_name} attribute.
+            \end{enumerate}
+
+        \subparagraph{The assign\_addr() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                    \item \texttt{ip\_range - string:} The interface's IP address together with its subnet mask.
+                    \item \texttt{gw\_addr - string - optional:} IP address of the subnet's gateway (i.e. router).
+                    \item \texttt{subnet - string - optional:} The subnet the interface belongs to in \textit{CIDR} format.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method lets the caller assign an IP address to the interface. The method will check that the interface name is valid and that the interface had no previous address to avoid errors. Note that when a node moves within the network its interface \textbf{will not} be reconfigured: a new one will be added to the node. Once the addressing has been successfully completed a message stating that will be printed.
+            \end{enumerate}
+
+        \subparagraph{The assign\_route() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                    \item \texttt{dest\_subnet - string:} Destination subnet for the route in \textit{CIDR} format.
+                    \item \texttt{gw\_router - string:} IP of the gateway for the interface's subnet.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} After checking the interface has been assigned an IP address and that it is allowed to communicate with other subnets through the \texttt{self.outbound\_inter face} attribute it will add the route defined by the parameters to the \texttt{self.routes dictionary}.
+            \end{enumerate}
+
+        \subparagraph{The reset\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will wipe the \texttt{self.routes dictionary} and remove the interface's IP address. This will also delete any preexisting routes. As usual, an informative message will inform of the operation's success.
+            \end{enumerate}
+
+        \subparagraph{The remove\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will delete the associated interface, together with all the routes, and print an informative message upon completion.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - interface\_inst:} The actual interface instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just call \texttt{remove\_interface()}.
+            \end{enumerate}

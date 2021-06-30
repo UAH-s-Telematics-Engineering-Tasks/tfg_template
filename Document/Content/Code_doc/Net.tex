@@ -1,0 +1,158 @@
+\subsubsection{Net.py}
+    This file contains the definition for the class representing the entire network topology. Said class gathers all the existing subnets as well as the routers interconnecting them. It will also instantiate the \texttt{address\_manager} class to handle of addressing. This class is the only place from which \textit{veths} can be created. This speeds up development when changes are needed. Given it is the base on which the rest of the infrastructure is built upon, the lifecycle of this class' instance is that of the virtual network.\\
+
+    \begin{enumerate}
+        \item The \texttt{d\_net} class is instantiated.
+        \item The entire virtual network is brought up.
+        \item The instance continues to exist as long as the program is running.
+        \item Once the instance is released, the entire virtual network is dismantled.
+        \item The program exits.
+    \end{enumerate}
+
+    \paragraph{Naming Veths Consistently}
+        \textit{Veths} are the most common element in the network. This implies that we need to somehow name them in such a way that we can easily reference them and guarantee no names will collide. Given the node names \textbf{must be} unique as specified in section \ref{sec:good-graphs}, and that there will only be a single connection between any two nodes, these \textit{veths} will be named according to the nodes they connect. The restrictions we imposed on naming guarantee these names will effectively be unique. Given a \textit{veth} is composed of two different ends we decided to share the name across the two and take advantage of \textit{iproute2} being case-sensitive. Thus, a \textit{veth} end will be named according to the \textit{veth\_<node\_x>\_<node\_y} template where each node name follows the \textit{<character>-<number | character>} pattern (the \texttt{`|'} character is to be read as \textit{OR}). The other end will have the \textbf{exact same} name with the node names in upper case instead of lower case. Thus, the ends of a \textit{veth} could be named \textit{veth\_c-1\_c-b} and \textit{veth\_C-1\_C-B}, respectively.
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape\_sequences dictionary} containing \textit{ANSI escape sequences} enabling colored output.
+            \item \textbf{\texttt{sys}:} This module allows us to print error messages to \textit{STDERR} instead of \textit{STDOUT} so that they can be easily redirected later on if needed with \texttt{2>/path/to/log}.
+            \item \textbf{\texttt{address\_manager}:} This module provides access to the \texttt{addr\_manager} class, which provides helper methods to address the network.
+            \item \textbf{\texttt{subnet}:} This module will let us instantiate the \texttt{d\_subnet} class as needed in order to add subnets to the network.
+            \item \textbf{\texttt{net\_machines}:} This module will let us instantiate and add \texttt{d\_router\_inst}s to the network.
+            \item \textbf{\texttt{veth}:} This module provides access to the \texttt{connect\_veth\_end()} function so that we can invoke it when required.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal \_escape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The d\_net Class}
+        This class represents an entire network. Note the \texttt{`d'} stands for docker.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.subnets - dictionary/string/d\_subnet\_inst}:} A dictionary containing an instance of each active subnet as the value associated to a key that is the subnet's address in \textit{CIDR} format.
+                \item \textbf{\texttt{self.routers - dictionary/string/s\_router\_inst}:} A dictionary containing an instance of each active router as the value associated to a key that is the router's name.
+                \item \textbf{\texttt{self.net\_addr\_manager - addr\_manager\_inst}:} An object in charge of managing \textit{IP} addresses and addressing the entire network.
+                \item \textbf{\texttt{self.router\_bridge - string}:} Initial placeholder name for a an auxiliary bridge that might be needed when moving subnets within the network. This will be clarified below.
+                \item \textbf{\texttt{self.aux\_router - string}:} Initial placeholder name for a an auxiliary router that might be needed when moving subnets within the network. This will be clarified below.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just initialize the network's parameters with sane defaults and call the \texttt{\_disable\_iptables()} method to prevent the host's kernel from interfering with the virtual network.
+            \end{enumerate}
+
+        \subparagraph{The \_disable\_iptables() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will disable the \textit{bridge-nf-call-iptables} kernel parameter to prevent the host kernel from interfering with the network as explained on section \ref{sec:bridge-caveats}. It will also make sure the \texttt{/var/run/netns} directory exists through the \texttt{mkdir -p} command to make sure the host is capable of correctly supporting the virtual network.
+            \end{enumerate}
+
+        \subparagraph{The get\_addr\_manager() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} The \texttt{addr\_manager\_inst} referenced by the \texttt{seld.addr\_manager} attribute.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The req\_brd\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the name to be given to a bridge that needs to be automatically created.
+                \item \textbf{Description:} This method might be needed when moving entire subnets within the virtual network. This method will also update the \texttt{self.router\_bridge} attribute to gracefully handle a subsequent calls. In order to modify new names we leverage \textit{python's} \texttt{ord()} \cite{bib:python-builtins} and \texttt{chr()} \cite{bib:python-builtins} functions. The generated names will follow the \texttt{``z-rb'', ``y-rb'', ..., ``a-rb''} progression. The current method definition only allows for $26$ different names. This limitation has not manifested yet but we should nonetheless note it exists.
+            \end{enumerate}
+
+        \subparagraph{The req\_r\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the name to be given to a router that needs to be automatically created.
+                \item \textbf{Description:} This method might be needed when moving entire subnets within the virtual network. The method will also update the \texttt{self.aux\_router} attribute to gracefully handle a subsequent calls. In order to modify new names we leverage \textit{python's} \texttt{ord()} \cite{bib:python-builtins} and \texttt{chr()} \cite{bib:python-builtins} functions. The generated names will follow the \texttt{``ra-z'', ``ra-y'', ..., ``ra-a''} progression. The current method definition only allows for $26$ different names. This limitation has not manifested yet but we should nonetheless note it exists.
+            \end{enumerate}
+
+        \subparagraph{The create\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                    \item \texttt{subn - string:} The subnet address for the subnet to create, specified in \textit{CIDR} format.
+                \end{enumerate}
+                \item \textbf{Returns:} The created \texttt{d\_subnet\_inst}.
+                \item \textbf{Description:} This method is in charge of instantiating each and every subnet composing the network. If the subnet address is unique and the \texttt{subn} parameter is not \texttt{None} the method will instantiate the \texttt{d\_subnet} class and add the instance to the \texttt{self.subnets} attribute. The instance referenced by the \texttt{self.addr\_manager} method will also be informed of the new subnet so that it can assign addresses belonging to it when needed. The fact the the method returns the created \texttt{d\_subnet\_in st} makes it compatible with almost any third-party overlay a user might want to add on top of our code. Instead of imposing restrictions on how the network elements should be created we tried to let the user decide that for him or herself.
+            \end{enumerate}
+
+        \subparagraph{The create\_router() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                    \item \texttt{name - string:} The router's name.
+                \end{enumerate}
+                \item \textbf{Returns:} The created \texttt{d\_router\_inst}.
+                \item \textbf{Description:} This method is the only way of adding new routers to the network. Like in the previous method, the generated router instance will be returned as well as stored on the \texttt{self.routers} attribute. The method will also print messages informing of whether it managed to carry out its operation successfully or not.
+            \end{enumerate}
+
+        \subparagraph{The connect\_nodes() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                    \item \texttt{node\_x - k\_bridge\_inst | d\_node\_inst | d\_router\_inst:} One network-a- ware machine we are to connect a \textit{veth} end to. Note the \texttt{`|'} character is to be read as \textit{OR}.
+                    \item \texttt{node\_y - k\_bridge\_inst | d\_node\_inst | d\_router\_inst:} The other netw- ork-aware machine we are to connect a \textit{veth} end to. Note the \texttt{`|'} character is to be read as \textit{OR}.
+                    \item \texttt{cnx\_subnet - string:} The subnet on which the network aware machines are being connected.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method handles the creation and connection of \textit{veths} whenever they are needed. It will generate the names for both \textit{veth} ends following the rules described at the beginning of the section, and call the \texttt{veth.connect\_veth\_end()} function to connect those ends the appropriate destinations. This method will print messages informing on the outcome.
+            \end{enumerate}
+
+        \subparagraph{The add\_router\_to\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                    \item \texttt{router - string:} The name of the router to add to a given subnet.
+                    \item \texttt{subnet - string:} The subnet address identifying the subnet we are to add the router to in \textit{CIDR} format.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will allow us to add a router to any subnets we connect it to. This method will let us maintain an accurate picture of the network state at all times.
+            \end{enumerate}
+
+        \subparagraph{The addressing\_time() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method triggers the addressing process for the entire network through the \texttt{address\_net} method defined in the \texttt{address\_manager} class.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} The destructor will undo the changes caused by the \texttt{\_disable\_ipta bles()} method and empty the \texttt{self.subnets} and \texttt{self.routers} attributes. This will trigger the destructors for all the instances contained in them, thus effectively dismantling the entire network. Even though the explicit deletion of the aforementioned attributes is not mandatory, carrying it out explicitly provides an easier understanding of the inner workings of the code. Being able to dismantle the network with just a few lines is the consequence of carefully crafting the destructors for each of our classes as we have explained in the previous sections.
+            \end{enumerate}

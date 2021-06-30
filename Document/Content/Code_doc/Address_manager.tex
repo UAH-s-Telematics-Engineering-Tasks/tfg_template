@@ -1,0 +1,160 @@
+\subsubsection{Address\_manager.py}
+    If one were to summarize the steps our task requires to the greatest extent he or she would find that there are only three of them. We first need to bring all the necessary network components up, then address them and finally add the routes enabling communication between them. All the ground we have covered up to now has been devoted to dealing with the first of the three. This section tackles the second aspect, and the last one will be related to a later section.\\
+
+    The class defined in this file will deal with \textbf{everything} related to \textit{IP} addressing within our network. It will keep track of the assigned and free addresses, reclaim those that are freed and manipulate them as needed in order to ensure an orderly and functional addressing of the network. In order to facilitate these actions we have decided to work with a text-based and integer-based representation of the \textit{IPv4} addresses we have to deal with.\\
+
+    \paragraph{Representing IP Addresses}
+        As seen on the enumeration on section \ref{sec:good-graphs}, \textit{IP} (note we are always referring to \textit{IPv4} addresses) addresses follow the \textit{A.B.C.D/X} pattern. These addresses are traditionally represented as \texttt{strings} within programs, but this data type quickly becomes cumbersome once we need to modify these addresses. We will later see how our address manager will hand out monotonically increasing \textit{IPs}. This implies we must somehow modify a given address and craft a new one. Even though this would be feasible and, under certain restrictions, not terribly hard to implement with \texttt{strings}, this approach lacks the flexibility offered by an integer-based representation. \textit{IPv4} addresses are ``just $32$-bit numbers'', just like \texttt{integers} \footnote{In \textit{python} we can deal with $64$-int integers as shown by executing \texttt{math.log(sys.maxsize + 1, 2)} on a \textit{python} interpreter, which returns $63.0$. This line shows that an \texttt{unsigned integer's} maximum value is $2^{63} - 1$. \cite{bib:python-sys}}: after all, that is what is included in the header of network layer datagrams. The text-based representation became widespread because us, as humans, prefer to deal with it rather than with a $32$-digit long chain of $1$s and $0$s. It has even made its way into the interfaces network operators use to configure network equipment: remember \textit{iproute2} accepts \textit{IP} addresses with the format we have set forth at the beginning of the paragraph. Nonetheless, the former approach is tremendously easy to modify: we can literally add $2$ to a given address and obtain a new address. We can also subtract one address from other to find out how many lie between them. This is what motivated us to create a set of methods capable of converting between both representations. We can use the text-based representation to ``communicate'' with \textit{iproute2} and print informative messages whilst we can leverage the integer-based one to easily modify and alter the addresses as desired.\\
+
+    Given how our network topologies are not extremely complex, we decided to associate a \textit{/24} (i.e. \textit{255.255.255.0}) subnet mask to every subnet. This restriction would make it feasible to skip the integer-based representation and just rely on a textual one. We nonetheless decided to implement the latter in an effort to make our code as extensible as possible so that it can also be effective under more ``extreme'' circumstances.\\
+
+    Unlike previous classes, the one defined in this file has no ``real'' lifecycle. As soon as the \texttt{d\_net} constructor is called this class will be instantiated and it will continue to exist until the program is taken down. We would like to point out how only one instance of this class can be brought up. We have not written the logic capable of coordinating two or more address managers, so if a user decides to work in such a way it is their own job to accommodate all the issues that might arise.\\
+
+    \paragraph{Imported Libraries}
+        None.
+
+    \paragraph{Global Variables}
+        None. We decided this module should not print any information as that task was already being carried out from other methods the class defined in this file relies on.
+
+    \paragraph{The addr\_manager Class}
+        This class is in charge of all the addressing for a given network.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.next\_subn\_addr - dictionary/string/int}:} This \texttt{dictionary} is keyed by a subnet address in \textit{CIDR} format. The value is the next free \textit{IP} address within that subnet.
+                \item \textbf{\texttt{self.freed\_subn\_addr - dictionary/string/(list/string)}:} This \texttt{dictionary} is also keyed by a subnet address in \textit{CIDR} format. The value will now be a \texttt{list} of the free \textit{IPs} belonging to the subnet specified in the key. These are stored as \texttt{strings} instead of as \texttt{ints}.
+                \item \textbf{\texttt{self.router\_subn - string}:} This is the subnet address to be assigned to an automatically created subnet in the process of moving other subnets or nodes around. This address will be modified in place as needed.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} The constructor will just initialize the instance's attributes.
+            \end{enumerate}
+
+        \subparagraph{The add\_subn() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{subnet - string:} The subnet address that the address manager needs to start keeping track of.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} The method will first check the subnet the caller is trying to add is indeed new and, if that is the case, it will find the first assignable address for that subnet. A new entry for that subnet will also be added to the \texttt{self.next\_subn\_addr} attribute.
+            \end{enumerate}
+
+        \subparagraph{The revoke\_ip() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{node - d\_node\_inst | d\_router\_inst:} The network-aware machine whose \textit{IP} for a given subnet we are to revoke.
+                    \item \texttt{subnet - string:} The subnet to which the \textit{IP} we are to revoke belongs to.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will revoke the \textit{IP} assigned to a \textit{layer-3} device belonging to the \texttt{subnet} subnet. This method is the only one populating the \texttt{self.freed\_subn \_addr} attribute. As stated before, these addresses are \texttt{strings}: we are certain they are free, so they can be assigned ``as-is'', without any need of modifying them.
+            \end{enumerate}
+
+        \subparagraph{The req\_r\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the subnet address for an automatically generated subnet, in \textit{CIDR} format.
+                \item \textbf{Description:} This method will return the current \texttt{self.router\_subn} attribute and modify the subnet address for subsequent calls. The new subnet address will be the \textit{/24} subnet ``below'' the one returned. If the returned subnet address were \textit{10.0.254.0/24} the next would become \textit{10.0.253.0/24}, for instance.
+            \end{enumerate}
+
+        \subparagraph{The \_request\_ip() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{subnet - string:} The subnet for which we are  requesting an \textit{IP} address.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the next free \textit{IP} address for the requested subnet together with the subnet mask (i.e. \textit{/24}).
+                \item \textbf{Description:} This method will also update the instance's attributes so that the assigned \textit{IP} address is no longer considered free.
+            \end{enumerate}
+
+        \subparagraph{The \_addr\_to\_binary() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{addr - string:} The \textit{IP} address whose representation we want to alter together with its associated subnet mask.
+                \end{enumerate}
+                \item \textbf{Returns:} An \texttt{int} containing the equivalent \textit{IP} address to the one specified in the \texttt{addr} parameter.
+                \item \textbf{Description:} This method makes constant use of \textit{bitwise operators} such as \texttt{OR (`|')} and \texttt{shifts (`<<', `>>')}. Given an \textit{IP} address such as \texttt{A.B.C.D}, its binary representation can be written as \texttt{A << 24 | B << 16 | C << 8 | D}.
+            \end{enumerate}
+
+        \subparagraph{The \_binary\_to\_addr() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{bin - int:} The \textit{IP} address whose representation we want to alter.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the equivalent \textit{IP} address to the one specified in the \texttt{bin} parameter.
+                \item \textbf{Description:} This method makes constant use of \textit{bitwise operators} such as \texttt{AND (`\&')} and \texttt{shifts (`<<', `>>')} as well. Given an \textit{IP} as an \texttt{int} (i.e. the \texttt{bin} parameter) and assuming a \texttt{/24} mask we can write the equivalent textual address as \texttt{"{}.{}.{}.{}".format(bin >> 24 \& 0xFF, bin >> 16 \& 0xFF, bin >> 8 \& 0xFF, bin \& 0xFF)}.
+            \end{enumerate}
+
+        \subparagraph{The \_get\_net\_addr() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{subn - string:} The subnet whose network address we want to unravel in \textit{CIDR} format.
+                \end{enumerate}
+                \item \textbf{Returns:} An \texttt{int} containing the subnet's network address.
+                \item \textbf{Description:} This method makes constant use of \textit{bitwise operators} as well. It will build the subnet mask as a chain of $1$s and $0$s from the one specified through the \texttt{subn} parameter (i.e. \textit{/24}). It will then apply it to said parameter with an \texttt{AND (`\&')} operation to obtain the desired network address.
+            \end{enumerate}
+
+        \subparagraph{The \_get\_brd\_addr() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{subn - string:} The subnet whose broadcast address we want to unravel in \textit{CIDR} format.
+                \end{enumerate}
+                \item \textbf{Returns:} An \texttt{int} containing the subnet's broadcast address.
+                \item \textbf{Description:} This method makes constant use of \textit{bitwise operators} as well. It will build the \textbf{exact same} mask as the \texttt{\_get\_net\_addr()} method and then invert it with the \texttt{NOT (`~')} operator. It will finally combine it with the passed parameter with an \texttt{OR (`|')} operation so as to obtain the desired result.
+            \end{enumerate}
+
+        \subparagraph{The address\_net() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{routers - dictionary/string/d\_router\_inst:} The routers that require addressing.
+                    \item \texttt{routers - dictionary/string/d\_subnet\_inst:} The subnets that require addressing.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will address the entire network. It will iterate over the provided \texttt{dictionaries} and assign addresses based on the subnets the interfaces belong to. We are addressing the routers before the subnets (and therefor the hosts) so that they are assigned the lowest addresses within the subnets they belong to. This is however not a limitation: we decided to proceed in this way to make finding errors in the addressing process easier for us. This method is also capable of catching and handling exceptions that might arise when trying to request addresses from a subnet the address manager has no notice of. This greatly simplifies troubleshooting mistakes and errors.
+            \end{enumerate}
+
+        \subparagraph{The reset\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{subn - string:} The subnet whose associated addresses we want to reset.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} The need for this method arose when we implemented functionality allowing nodes and subnets to move around the network. The method will just overwrite the lowest free address for a given subnet with the subnet's network address plus one, effectively resetting addressing.
+            \end{enumerate}
+
+        \subparagraph{The assign\_new\_ip() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - addr\_manager:} The actual address manager instance.
+                    \item \texttt{node - d\_node\_inst:} The node we will assign an \textit{IP} address to.
+                    \item \texttt{subnet - string:} The subnet for which we want to assign an \textit{IP} address.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} In order to reuse revoked \textit{IPs} we need to assign freed addresses before moving on and assigning the first free address. When assigning a new \textit{IP} to moved nodes, the method will check whether the \texttt{list} of freed \textit{IPs} for the destination subnet (specified through the \texttt{subnet} parameter) is empty or not. If it is not, it will assign the first freed \textit{IP} by \texttt{pop()}ping \cite{bib:python-datastructures} it from the appropriate \texttt{list}. It will otherwise request a new address.
+            \end{enumerate}

@@ -1,0 +1,242 @@
+\subsubsection{Net\_machines.py}
+    This file plays a role quite similar to that of the \texttt{Subnet\_machines.py} file we described above. This file contains the definition of the class representing the routers we will use in our topologies. Even though routers, like nodes, are implemented as docker containers they behave in a slightly different way.\\
+
+    Routers will implement the different firewalls we are to use through \textit{iptables} and they will always contain at least two interfaces (in contrast with nodes that will usually contain a single one). The differences between these two classes are motivated by these slight discrepancies in terms of functionality. We would like to point out that the syntax that one \textbf{must} adhere to when defining firewall rules has been set forth in section \ref{sec:fw-rules}.\\
+
+    The lifecycle of routers is practically the same as that of nodes. The most noticeable difference might be how a router will usually assist to more interface additions and deletions throughout its lifespan.\\
+
+    \begin{enumerate}
+        \item The real instance is brought up.
+        \item The object representing said instance is created.
+        \item The object sits idle. Several of its parameters can be altered within this state, such as the number of interfaces.
+        \item At some point, the object will be dismantled.
+        \item The release of the object will trigger the removal of the associated real instance.
+    \end{enumerate}
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape\_sequences dictionary} containing \textit{ANSI escape sequences} enabling colored output.
+            \item \textbf{\texttt{sys}:} This module allows us to print error messages to \textit{STDERR} instead of \textit{STDOUT} so that they can be easily redirected later on if needed with \texttt{2>/path/to/log}.
+            \item \textbf{\texttt{subprocess}:} This module enables the execution of commands through a shell \textbf{and} allows the caller to retrieve the command's output to \textit{STDOUT} on top of its return code. This will let us retrieve a container's associated \textit{PID}.
+            \item \textbf{\texttt{interface}:} This module will let us instantiate and add \texttt{interface\_inst} to the nodes we create.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal \_escape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The d\_router Class}
+        This class represents a virtual router. Note the \texttt{`d'} stands for docker.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.type - string}:} Object type identifier containing the \texttt{``router'' string} for routers. It is used within functions to check the type of object it is currently dealing with.
+                \item \textbf{\texttt{self.name - string}:} Router's name.
+                \item \textbf{\texttt{self.pid - int}:} The associated container's \textit{PID}. It is used when linking the container's network namespace to \texttt{/var/run/netns} so that we can easily access it afterwards.
+                \item \textbf{\texttt{self.interfaces - list/interface\_inst}:}  A list containing the instances of the interfaces belonging to this router.
+                \item \textbf{\texttt{fw\_rules - dictionary/string/list}:} Firewall rules configured for this router. Note that even though the ``logical'' format is exactly the same as the one presented on section \ref{sec:fw-rules}, the node names are translated to \textit{IPs} by the caller when this member is initialized. This implies that the ``real'' entries we are to work with internally are of the form \texttt{("source\_ip", "destination\_ip", bidirectional?)} instead of \texttt{("source\_node", "destination\_node", bidirectional?)}.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{name - string:} The router's name.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just initialize several members with the passed parameters whilst assigning sane defaults to others. It leverages the power of the \texttt{docker inspect} command to find the associated container's \textit{PID}. It will also call \texttt{\_link\_net\_namespace()} to allow an easier handling of the container's namespace through the \texttt{ip} command. It finally calls \texttt{\_set\_hostname()} to configure the router's identity from the network's perspective.
+            \end{enumerate}
+
+        \subparagraph{The \_link\_net\_namespace() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will create a symbolic link to the container's network namespace under \texttt{/var/run/netns} where the \texttt{ip} command will ``look for'' existing named namespaces. This method leverages the \texttt{self.pid} attribute that is initialized in the constructor to find the original location of the container's namespace so that it can later be linked.
+            \end{enumerate}
+
+        \subparagraph{The \_set\_hostname() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just set the container's hostname. It is essential to distinguish between the container's name and its hostname. The former is an identifier that only concerns docker, whilst the latter will be the machine's identifier from the point of view of the network. This method will make the latter the same as the former. What is more, this operation made us change the underscores (\texttt{\_}) in the original node names by hyphens (\texttt{-}): the former were not allowed on network hostnames.
+            \end{enumerate}
+
+        \subparagraph{The get\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the router's name.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_type() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} The \texttt{"router" string}.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_subnets() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{list/string} containing the different subnets this node is connected to in \textit{CIDR} format.
+                \item \textbf{Description:} This method will iterate over the \texttt{interface\_inst} contained in the \texttt{self.interfaces} attribute to then provide a list containing the subnets each of these \texttt{interface\_inst} belong to.
+            \end{enumerate}
+
+        \subparagraph{The get\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{subnet - string - optional:} Specifies the subnet for which an associated \texttt{interface\_inst} should be returned.
+                \end{enumerate}
+                \item \textbf{Returns:} The following are evaluated in order.
+                \begin{enumerate}
+                    \item A \texttt{list/interface\_inst} if the \texttt{subnet} parameter was not specified.
+                    \item An \texttt{interface\_inst} associated to the subnet specified in the \texttt{subnet} parameter.
+                    \item \texttt{None} if there is no interface associated with the subnet specified through the \texttt{subnet} parameter.
+                \end{enumerate}
+                \item \textbf{Description:} As seen on the \textbf{returns} section, the \texttt{subnet} parameter behaves like a switch. A \texttt{list} of \texttt{interface\_inst} will be returned if it is not specified by the caller. In case it is provided, it will return either an \texttt{interface\_inst} or \texttt{None} if there is no interface associated with the specified subnet.
+            \end{enumerate}
+
+        \subparagraph{The create\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{if\_name - string:} Name of the interface to create.
+                    \item \texttt{if\_subnet - string:} Subnet associated with the interface to create.
+                    \item \texttt{o\_if - boolean:} Flag indicating whether the interface to create should be allowed to ``see'' other subnets.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will instantiate a new interface and add it to the node's \texttt{self.interfaces list}. The method's parameters will be passed directly to the \texttt{interface} class constructor.
+            \end{enumerate}
+
+        \subparagraph{The reset\_interfaces() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{subnet - string - optional:} The subnet associated to the interface that should be reset.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{boolean} indicating whether the operation completed successfully or not.
+                \item \textbf{Description:} If the caller does not specify a \texttt{subnet} parameter, this method erases all the interfaces associated with the router whilst also removing the associated ``real instances'' from the host machine. This can easily be accomplished through the \texttt{clear()} \cite{bib:python-datastructures} method defined for \texttt{lists}, such as the \texttt{self.interfaces} attribute due to the destructor we defined for the \texttt{interface} class. If the caller specifies a subnet, the method will look for the interface belonging to that subnet and \texttt{remove()} it from the \texttt{self.interfaces} attribute. This will, as before, trigger the deletion of the ``real interface''. The method will return \texttt{True} if either all the interfaces were deleted (i.e. no \texttt{subnet} was specified) or if the one specified through the \texttt{subnet} parameter was found and deleted as well. If the caller specified an interface belonging to a specific subnet and it was not found the method will return \texttt{False}, signaling an error.
+            \end{enumerate}
+
+        \subparagraph{The set\_fw\_rules() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{fw\_rules - dictionary/list/string:} Firewall rules to be applied to the router.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will update the contents of the \texttt{self.fw\_rules} attribute that will serve as the cornerstone for the following methods.
+            \end{enumerate}
+
+        \subparagraph{The apply\_fw\_rules() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will parse (i.e. process) the rules and policy contained in the \texttt{self.fw\_rules} attribute and then proceed on to make them effective. In order to do so, it relies on the \texttt{self.instantiate\_fw\_rule()} and \texttt{set\_fw\_policy()} methods we describe below. If said attribute is an empty \texttt{dictionary} the method will exit promptly and allow the router to forward all the traffic flowing through it, thus effectively disabling the firewall within the associated container. This method will only print a message when there are no rules configured, as the \texttt{self.instantiate\_fw\_ru le()} method will print a message for each rule it processes.
+            \end{enumerate}
+
+        \subparagraph{The instantiate\_fw\_rule() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{target - string:} The \textit{target} for the rule, either \texttt{``ACCEPT''} or \texttt{``DROP''}.
+                    \item \texttt{source - string:} The source \textit{IP} address for the rule.
+                    \item \texttt{dest - string:} The destination \textit{IP} address for the rule.
+                    \item \texttt{bi\_dir - boolean:} \texttt{True} if the rule is ``bi-directional'' (i.e. an inverse rule should be instantiated). \texttt{False} otherwise.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method leverages the \texttt{docker exec} command to instantiate the \textit{iptables} rules specified by its parameters on the associated container. The \texttt{bi\_dir} parameter will cause the instantiation of a symmetric rule (i.e. one that swaps the source and destination \textit{IP} addresses) as seen on section \ref{sec:fw-rules}. An informative message will be printed for each rule that is successfully added.
+            \end{enumerate}
+
+        \subparagraph{The set\_fw\_policy() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{policy - string:} The policy to apply to the router.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will apply the policy specified through the \texttt{policy} parameter to the router's \textit{FORWARDING} chain. \textit{iptables} is capable of handling both upper and lowercase policy specifications. This method relies on the \texttt{docker exec} command to configure the container associated to the instance whose method we are invoking. The method will also print a message if the operation succeeds.
+            \end{enumerate}
+
+        \subparagraph{The add\_n\_apply\_fw\_rule() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{trgt - string:} The \textit{target} for the rule, either \texttt{``ACCEPT''} or \texttt{``DROP''}.
+                    \item \texttt{src - string:} The source \textit{IP} address for the rule.
+                    \item \texttt{dst - string:} The destination \textit{IP} address for the rule.
+                    \item \texttt{b\_dir - boolean:} \texttt{True} if the rule is ``bi-directional'' (i.e. an inverse rule should be instantiated). \texttt{False} otherwise.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method has been written to support ``dynamic firewalls''. As nodes are moved around the network the need for changes in firewall rules arises in order to maintain the exact same logical topology. This method will just add the rule specified through the parameters to the \texttt{self.fw\_rules} attribute and pass them to the \texttt{instantiate\_fw\_rule()} method to make them effective.
+            \end{enumerate}
+
+        \subparagraph{The remove\_fw\_rule() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                    \item \texttt{moving\_node\_ip - string:} The \textit{IP} address whose associated rules we are to delete.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method has been written to support ``dynamic firewalls'' as well. On top of adding new rules upon a node's movement we also need to delete stale ones so that firewall configurations do not become cluttered over time. Given we are reusing freed \textit{IP} addresses, leaving unused rules behind could have unintended side effects that would be difficult to debug. This method will iterate over a router's firewall rules through the \texttt{self.fw\_rules} attribute and delete those whose source or destination \textit{IP} is the one specified by the \texttt{moving\_node} parameter. The reason behind the definition of this method is what justifies the chosen parameter name. This method relies on the \texttt{docker exec} command and it will also print an informative message upon rule deletion so that we can be sure every task was carried out successfully.
+            \end{enumerate}
+
+        \subparagraph{The stop() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{boolean} indicating whether the operation succeeded or not.
+                \item \textbf{Description:} This method is in charge of stopping the instance's associated docker container. We can do so thanks to the \texttt{docker stop} command. This method leverages a redirection to \texttt{/dev/null} so that the output generated by \texttt{docker stop} does not interfere with our own. This method will print a message both upon success and error.
+            \end{enumerate}
+
+        \subparagraph{The remove() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method is in charge of entirely removing the associated container. It will call the \texttt{stop()} method as a container must be stopped before it can be removed through the \texttt{docker rm} command. First of all, the method will get rid of the interfaces as soon as possible so that, even if something goes wrong when deleting the container, it has no connection to a network that might still be alive. This will in fact isolate the container so that possible errors have no impact on the rest of the virtualized scenario. We will also delete the link to the container's network namespace living under \texttt{/var/run/netns}. As usual we will print information relative to the command's outcome.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_router\_inst:} The actual router instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will call the \texttt{remove()} which will in turn delete the associated container. Given the definition of the \texttt{remove()} method this will later allow us to dismantle the entire network with a single order.
+            \end{enumerate}

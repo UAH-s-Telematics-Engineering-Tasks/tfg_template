@@ -1,0 +1,130 @@
+% We prefer a oneside layout even though books
+    % default to twoside
+\documentclass[12 pt, oneside]{book}
+
+% This package allows us to control the document wide
+    % margins whilst also altering them at certain
+    % pages
+\usepackage[
+    a4paper,
+    left  = 2.5cm,
+    right = 2.5cm
+    % top = 2cm
+    % bottom = 2cm
+]{geometry}
+
+% Allows using vertical bars in math mode
+\usepackage{amsmath}
+
+% Handles characters beyond ASCII nicely
+\usepackage[utf8]{inputenc}
+
+% Adds the Euro Symbol
+\usepackage{eurosym}
+
+% Table of Contents Control
+    % Determines the ToC's Contents.
+        % nottoc -> Do NOT include the ToC in the ToC itself.
+        % notlof -> Do NOT include the LoF in the ToC.
+        % notlot -> Do NOT include the LoT in the ToC.
+    \usepackage[nottoc, notlof, notlot]{tocbibind}
+
+    % Style the ToCs. Package documentation at:
+        % http://mirrors.ibiblio.org/CTAN/macros/latex/contrib/tocloft/tocloft.pdf
+        \usepackage{tocloft}
+
+% Bibliography Stuff
+    % See https://www.overleaf.com/learn/latex/Bibliography_management_in_LaTeX
+    % Note the 'dashed = false' option prevents a repeated author's name to be replaced
+        % by dashes (----) when both references share a page.
+        \usepackage[backend = bibtex, style = ieee, dashed = flase]{biblatex}
+
+        % Include our Bibliography Databases (i.e. *.bib files)
+            \addbibresource{Bibliography/articles.bib}
+            \addbibresource{Bibliography/figures.bib}
+            \addbibresource{Bibliography/websites.bib}
+            \addbibresource{Bibliography/manpages.bib}
+            \addbibresource{Bibliography/books.bib}
+
+% Figure Control
+    % Handles the addition of figures
+    \usepackage{graphicx}
+    \graphicspath{{Figures/}}
+
+    % Allows rotating floats such as figures and tables.
+    \usepackage{rotating}
+
+% Gantt Diagrams
+\usepackage{pgfgantt}
+
+% Allows the inclusion of PDF pages. We
+    % use it to include pre-crafted covers.
+\usepackage{pdfpages}
+
+% Allows the easy addition of quotes
+\usepackage{epigraph}
+
+% Link Control
+    \usepackage[
+        pdfauthor  = {Pablo Collado Soto (pcolladosoto@gmx.com)}, % PDF Metadata
+        pdftitle   = {Think of Something Witty...},               % PDF Metadata
+        pdfborder  = {0 0 0},                                     % Remove the ugly border
+        colorlinks = true,                                        % Let there be color
+        citecolor  = black,                                       % Make citations appear normal (i.e black)
+        linkcolor  = black,                                       % The same for links (i.e table of contents)
+        urlcolor   = cyan                                         % Color the web links. (cyan is fancy for blueish...)
+    ]{hyperref}
+
+% Code Listings
+    % See https://www.overleaf.com/learn/latex/Code_listing
+    \usepackage{listings, lstautogobble}
+    \usepackage{xcolor}
+
+    % Color definitions to be used in the listings
+        % Check http://latexcolor.com to get some
+        % really nice colour definitions!
+    \definecolor{atomictangerine}{rgb}{1.0, 0.6, 0.4}
+    \definecolor{dollarbill}{rgb}{0.52, 0.73, 0.4}
+    \definecolor{dimgray}{rgb}{0.41, 0.41, 0.41}
+    \definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+
+    % Defines a default style for the listings
+    \lstdefinestyle{default}{
+        commentstyle = \color{dimgray},
+        keywordstyle = \color{atomictangerine},
+        numberstyle = \tiny\color{ceruleanblue},
+        stringstyle = \color{dollarbill},
+        basicstyle = \ttfamily\footnotesize, % Consider using \scriptsize!
+        breakatwhitespace = false,
+        breaklines = true,
+        captionpos = b,
+        keepspaces = true,
+        numbers = left,
+        numbersep = 5pt,
+        showspaces = false,
+        showstringspaces = false,
+        showtabs = false,
+        tabsize = 2,
+        autogobble = true
+    }
+
+    % This style defines a left margin to visually center CSV files
+    \lstdefinestyle{csvs}{
+        numberstyle = \tiny\color{ceruleanblue},
+        basicstyle = \ttfamily\footnotesize, % Consider using \scriptsize!
+        breakatwhitespace = false,
+        breaklines = true,
+        captionpos = b,
+        keepspaces = true,
+        numbers = left,
+        numbersep = 5pt,
+        showspaces = false,
+        showstringspaces = false,
+        showtabs = false,
+        tabsize = 2,
+        autogobble = true,
+        xleftmargin = 3.2cm,
+        % xrightmargin=1cm
+    }
+
+    \lstset{style = default}

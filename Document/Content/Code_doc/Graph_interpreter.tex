@@ -1,0 +1,192 @@
+\subsubsection{Graph\_to\_virt\_net.py}
+   This file contains the source code defining the class in charge of interpreting a graph generated through the \textit{networkx} module and invoking the necessary methods from the \textit{virt\_net} module to instantiate it. This class also contains the definitions for the methods implementing features such as the movement of nodes in an operational virtual network.\\
+
+   An instance of the \texttt{graph\_interpreter} class will exist as long as the virtual network is online. It is needed before any virtual network elements are instantiated and it will be taken down together with the virtual network.\\
+
+   \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{networkx}:} This module provides several graph-related functionalities such as routing algorithms which are required by some of the methods.
+            \item \textbf{\texttt{copy}:} This modules allows us to create independent copies of ``deep'' \texttt{dictionaries}. This provides independent instances with the same contents instead of a shallow copy whose values are references to the \textbf{same} variables. Given \textit{python} does not expose the \textit{C} \texttt{pointer} type this idea can be regarded as awkward, but in \textit{C's} terms we can state that this module will allow us to dereference all the \texttt{pointers} within the structures we are to copy so that the resulting variable contains references to a totally different memory region.
+            \item \textbf{\texttt{net}:} This module provides access to the \texttt{d\_net} class, which acts as a gateway for accessing the facilities offered by the \textit{virt\_net} module.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        None.
+
+    \paragraph{The graph\_interpreter Class}
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.node\_to\_instance - dictionary/string/dictionary/string/X\_inst}:} T- his \texttt{dictionary} contains a \texttt{dictionary} for each and every type of network-aware machine. Each sub-\texttt{dictionary} contains all the instances of said type. Thus, one can access \textbf{every} instance through this \texttt{dictionary}. We decided to design the class in this way instead of accessing instances through the \texttt{d\_net} instance to shorten several of the class' functions. Given this attribute was being referenced many times throughout the class we believe this decision improved the code's readability.
+                \item \textbf{\texttt{self.net\_instance - d\_net\_inst}:} This attribute contains the network instance we are working with. This is the entry point for all the methods offered by the \textit{virt\_net} module, so we will make use of this attribute over and over again.
+                \item \textbf{\texttt{self.connectivity\_view - networkx\_graph\_inst}:}  This graph captures the logical connections that can be established according to the rules defined in our firewalls. In the absence of firewalls this graph would be \textbf{equivalent} to the one we are interpreting to bring the network up. The existence of this graph made reconfiguring firewalls dynamically much easier: this logical topology \textbf{will not} change even if the physical one does, so it serves as a reference that must always be respected.
+                \item \textbf{\texttt{self.addr\_manager - addr\_manager\_inst}:} A reference to \textbf{the same} \texttt{addr\_manager \_inst} that is an attribute of the \texttt{d\_net} class. We are just referencing it though a class attribute to shorten several code lines so as to increase the code's readability.
+            \end{enumerate}
+
+    \subparagraph{The Constructor}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - graph\_interpreter\_inst:} The actual graph interpreter instance.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method will check wether the user running the program is \textit{root} through the \texttt{os.geteuid()} statement. If the user running the program is indeed \textit{root}, execution will continua and several attributes including \texttt{self.net\_instance} will be initialized. Otherwise the program will exit after informing the user the program is to be run by \textit{root}.
+        \end{enumerate}
+
+    \subparagraph{The get\_subnets() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{list/strings} of the currently active subnets given as the subnets' network address together with the subnet mask in \textit{CIDR} notation.
+            \item \textbf{Description:} Not applicable.
+        \end{enumerate}
+
+    \subparagraph{The get\_nodes() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{list/strings} containing the names of the currently active nodes.
+            \item \textbf{Description:} Not applicable.
+        \end{enumerate}
+
+    \subparagraph{The get\_routers() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{list/strings} containing the names of the currently active routers.
+            \item \textbf{Description:} Not applicable.
+        \end{enumerate}
+
+    \subparagraph{The get\_n\_n\_r() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{list/strings} containing the names of the currently active nodes and routers.
+            \item \textbf{Description:} This method was written to avoid having to call both \texttt{get\_nodes()} and \texttt{get\_routers()} back-to-back in several methods in an effort, once more, to shorten the code lines and improve the code's readability to the greatest extent.
+        \end{enumerate}
+
+    \subparagraph{The get\_cnx\_graph() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{networkx\_graph\_inst} representing the current logical topology.
+            \item \textbf{Description:} This method is just returning the \texttt{self.connectivity\_view} attribute ``behind the scenes''.
+        \end{enumerate}
+
+    \subparagraph{The create\_n\_connect\_node() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{node - string:} Name of the node we are to create and connect or just connect to a bridge.
+                \item \texttt{bridge - string:} Name of the bridge we are to connect the node to.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method is called whenever we want to connect a node to a bridge. The method will check whether the node exists already: if it does, it will just be connected and if it does not, it will be created beforehand. All these nodes will be added to the \texttt{self.connectivity\_view} attribute as well: this ensures no bridges will be present on that graph as they are transparent to us at the ``logical connection'' level. Due to how the graph describing the physical topology is translated and executed, all the bridges are guaranteed to exist before this method is run. This subtlety frees this method from having to instantiate bridges as well.
+        \end{enumerate}
+
+    \subparagraph{The create\_n\_connect\_router() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{router - string:} Name of the router we are to create and connect or just connect to a bridge.
+                \item \texttt{bridge - string:} Name of the bridge we are to connect the router to.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method is entirely analogous to the \texttt{create\_n\_connect\_node()} method. It will just instantiate and connect routers instead of nodes.
+        \end{enumerate}
+
+    \subparagraph{The found\_bridge() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{b\_name - string:} Name of the bridge that will be created, if appropriate.
+                \item \texttt{subnet - string:} subnet address in \textit{CIDR} format specifying the subnet supported by said bridge.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method will check whether the bridge specified by the \texttt{b\_name} parameter exists or not. If it does, it will just exit. If if does not, it will create both the bridge and the associated subnet.
+        \end{enumerate}
+
+    \subparagraph{The \_instantiate\_routes() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{found\_routes - dictionary/string/dictionary/string/list/string:} A \texttt{dictionary} containing the shortest path from \textbf{node} to each subnet. This dictionary is generated by means of the \texttt{\allowbreak networkx. shortest\_path()} function within the \texttt{translate\_n\_execute\_graph()} method we will describe below.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method will parse the \texttt{found\_routes} parameter and instantiate the appropriate routes at every node and router. The anatomy of the \texttt{found\_routes} parameter is described on listing \ref{lst:route-dict}.
+        \end{enumerate}
+
+    \begin{lstlisting}[language = python, caption = Data Structure Containing All the Network's Routes., label = lst:route-dict]
+        {
+            'dest_subnet': {
+                'source_node_a': [
+                    'source_node_a',
+                    'gateway_x',
+                    'dest_subnet_bridge'
+                ],
+                'source_node_b': [
+                    'source_node_b',
+                    'gateway_y',
+                    'dest_subnet_bridge'
+                ],
+                # There is one such entry for each node in the graph (routers,
+                    # bridges and hosts). Each of these entries has possibly
+                    # more hops, but we are only interested in the first one
+                    # as that is the gateway we need to configure.
+            }
+            # There is one such entry for each subnet.
+        }
+    \end{lstlisting}
+
+    \subparagraph{The translate\_n\_execute\_graph() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{graph - networkx\_graph\_inst:} The graph representing the virtual topology we are to instantiate.
+                \item \texttt{fw\_enable - boolean - optional:} A flag indicating whether the method should activate the firewall configuration specified through attributes of the nodes representing routers. This parameter proved useful when we were debugging the \textit{ICS} topology seen on section \ref{sec:working-tops}.
+            \end{enumerate}
+            \item \textbf{Returns:} An \texttt{int} indicating whether the virtual network could be instantiated ($0$) or if there was some kind of error ($-1$).
+            \item \textbf{Description:} This method relies on most of the above to correctly parse the graph provided as a parameter and end up with a completely functional virtual network. We can regard it as a ``dispatcher'' method in the sense that it coordinates many others to achieve a complex goal.
+        \end{enumerate}
+
+    \subparagraph{The move\_subnet() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{graph - networkx\_graph\_inst:} The graph representing the virtual topology that is currently instantiated.
+                \item \texttt{og\_subnet - string:} The subnet we are to move, specified in \textit{CIDR} format.
+                \item \texttt{dest\_subnet - string:} The subnet the one we are moving should be attached to, specified in \textit{CIDR} format.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method will connect the subnet specified through the \texttt{og\_subnet} parameter to the one identified by the \texttt{dest\_subnet} parameter. Doing so usually incurs in many subtleties that need to be managed so as not to disrupt the rest of the network. This translates into this method being noticeably longer than the other we have described up to now.
+        \end{enumerate}
+
+    \subparagraph{The move\_node() Method}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{self - d\_net\_inst:} The actual network instance.
+                \item \texttt{graph - networkx\_graph\_inst:} The graph representing the virtual topology that is currently instantiated.
+                \item \texttt{node - string:} The name of the node to displace.
+                \item \texttt{dest\_subnet - string:} The subnet the node we are moving should be attached to, specified in \textit{CIDR} format.
+                \item \texttt{pure\_movement - boolean - optional:} This flag controls whether the chan- ges triggered by the movement should be made effective in the internal network representation of the \textit{virt\_net} module. This parameter has been previously used for debugging this method and will often be \texttt{True}.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} This method will move the specified node to the provided subnet whilst handling all the intricacies that might arise when doing so. A prime example of these would be reconfiguring firewalls ``on the fly'' if the affected node had any restrictions in terms of the connections it was allowed to establish. Like the method before, this one is rather large.
+        \end{enumerate}

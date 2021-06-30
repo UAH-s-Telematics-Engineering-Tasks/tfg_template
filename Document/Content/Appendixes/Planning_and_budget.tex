@@ -1,0 +1,51 @@
+\chapter{Project Budget and Schedule}
+    \section{Project Schedule}
+        We included a pretty Gantt diagram :P
+
+        \begin{figure}
+            \centering
+            \begin{tikzpicture}
+                \begin{ganttchart}[
+                    hgrid,
+                    vgrid,
+                    % y unit chart=.73cm,
+                    bar/.append style={fill=cyan!50},
+                    % expand chart=\linewidth
+                ]{1}{16}
+                    \gantttitle{Weeks}{16}\\
+                    \gantttitlelist{1,...,16}{1}\\
+                    \ganttbar{Information Gathering}{1}{4}\\
+                    \ganttbar{Technology Assessment}{1}{4}\\
+                    \ganttbar{Planning}{5}{5}\\
+                    \ganttbar{Development Environment Setup}{5}{5}\\
+                    \ganttbar{Development}{5}{13}\\
+                    \ganttbar{Report Preparation}{13}{16}
+                \end{ganttchart}
+            \end{tikzpicture}
+            \caption{Project's Development Phases Over Time}
+            \label{fig:gantt}
+        \end{figure}
+
+    \section{Budget}
+        Its all about the money...\\
+
+        \begin{table}
+            \centering
+            \begin{tabular}{|c|c|c|c|}
+                \hline
+                \textbf{Concept} & \textbf{Units} & \textbf{Unit Cost} & \textbf{Total Cost (VAT Included)}\\
+                \hline
+                Software & $0$ & $0\ \text{\euro{}}$ & $0\ \text{\euro{}}$\\
+                \hline
+                Hardware & $1$ & $1200\ \text{\euro{}}$ & $1200\ \text{\euro{}}$\\
+                \hline
+                Fixed Expenses per Week & $16$ & $85\ \text{\euro{}}$ & $1360\ \text{\euro{}}$\\
+                \hline
+                Salary per hour & $320$ & $18\ \text{\euro{}}$ & $5760\ \text{\euro{}}$\\
+                \hline
+                \textbf{Total:} & & & $8320\ \text{\euro{}}$\\
+                \hline
+            \end{tabular}
+            \caption{Project's Budget}
+            \label{tab:budget}
+        \end{table}

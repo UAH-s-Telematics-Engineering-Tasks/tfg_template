@@ -1,0 +1,24 @@
+\subsubsection{Net\_ctrl.py}
+    This file defines the \texttt{launch\_net()} function that will offer the facilities we described above. Just like with other \textit{CLIs}, the user will be granted a set of commands that let him or her interact with the virtual network. Thee have already been described in section \ref{sec:cli-cmds}.\\
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{networkx}:} This module provides several graph-related functionalities such as offering graphical representations of graphs.
+            \item \textbf{\texttt{matplotlib}:} The \textit{networkx} module relies on \textit{matpolotlib} to generate graphical representations of graphs.
+            \item \textbf{\texttt{datetime}:} This module allows using timestamps on the abscissa axis of plots generated with \textit{matplotlib}.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        None.
+
+    \paragraph{The launch\_net() Function}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{graph - networkx\_graph\_inst:} The graph representing the network topology to build.
+                \item \texttt{fw\_on - boolean - optional:} A flag controlling whether the firewalls on routers should be activated (\texttt{True}) or not (\texttt{False}). It is \texttt{True} by default.
+                \item \texttt{report\_mode - boolean - optional:} A flag controlling whether the function should be run in \textit{report mode} (\texttt{False}) or \textit{report mode} (\texttt{True}). It is \texttt{False} by default.
+            \end{enumerate}
+            \item \textbf{Returns:} Nothing.
+            \item \textbf{Description:} After correctly bringing the virtual network represented by the \textit{graph} parameter up, this function will enter an infinite loop serving as the \textit{CLI's} main loop. When in the infinite loop, the function will wait for user input and parse it. It will then try to execute the invoked command, printing a message in case of error. This loop can be exited through commands such as \texttt{exit} or \texttt{quit}. This will also cause the dismantling of the entire virtual network. In other words, this is \textbf{the function} keeping the network alive, as it is the one that will instantiate the \texttt{graph\_interpreter} class which will in turn bring up all the other network elements. As always, this function can be modified and rewritten to suit other user's needs. As long as it instantiates the \texttt{graph\_interpreter} class everything will ``look the same'' to auxiliary modules such as \textit{graph\_interpreter} and \textit{virt\_net}.
+        \end{enumerate}

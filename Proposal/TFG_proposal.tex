@@ -1,0 +1,83 @@
+\documentclass[12pt]{article}
+
+% Modify the document's margins
+\usepackage{geometry}
+\geometry{
+    a4paper,
+    left = 18mm,
+    right = 18mm,
+    top = 14mm,
+}
+
+% Embed the bibliography contents into the *.tex file given
+    % we don't expect to have a whole lot of them.
+
+% These two are just an example, feel free to erase them!
+\usepackage{filecontents}
+\begin{filecontents}{refs.bib}
+@article{bib:REACT,
+    title = "REACT: reactive resilience for critical infrastructures using graph-coloring techniques",
+    journal = "Journal of Network and Computer Applications",
+    volume = "145",
+    pages = "102402",
+    year = "2019",
+    issn = "1084-8045",
+    doi = "https://doi.org/10.1016/j.jnca.2019.07.003",
+    url = "http://www.sciencedirect.com/science/article/pii/S1084804519302279",
+    author = "Ivan Marsa-Maestre and Jose Manuel Gimenez-Guzman and David Orden and Enrique {de la Hoz} and Mark Klein",
+    keywords = "Network security, Network theory (graphs), Optimization, Simulated annealing",
+    abstract = "Nowadays society is more and more dependent on critical infrastructures. Critical network infrastructures (CNI) are communication networks whose disruption can create a severe impact. In this paper we propose REACT, a distributed framework for reactive network resilience, which allows networks to reconfigure themselves in the event of a security incidents so that the risk of further damage is mitigated. Our framework takes advantage of a risk model based on multilayer networks, as well as a graph-coloring problem conversion, to identify new, more resilient configurations for networks in the event of an attack. We propose two different solution approaches, and evaluate them from two different perspectives, with a number of centralized optimization techniques. Experiments show that our approaches outperform the reference approaches in terms of risk mitigation and performance."
+}
+
+@article{bib:ICS,
+    title={Improving ICS Cyber Resilience through Optimal Diversification of Network Resources}, 
+    author={Tingting Li and Cheng Feng and Chris Hankin},
+    year={2019},
+    eprint={1811.00142},
+    archivePrefix={arXiv},
+    primaryClass={cs.CR}
+}
+\end{filecontents}
+
+% Allows us to cite bibliography entries!
+\usepackage{cite}
+
+% These fields define the proposal's title
+\title{\vspace{-1cm}Undergraduate Thesis Proposal Title}
+\author{Author's Name \\ Tutor: Tutor's Name \\ \\ \textit{Undergraduate Thesis Proposal} \\ \\ \textbf{Universidad de Alcalá}}
+\date{}
+
+\begin{document}
+    % Builds the document's title
+    \maketitle
+
+    \section{Introduction}
+        Time to write! Remember you can cite bibliography entries with \textbackslash cite\{bib:REACT\}, for instance. This produces something like \cite{bib:REACT}. Remember to change \texttt{bib:REACT} for whatever you include in your entries!\\
+
+        We prefer to separate paragraphs in between them and thus use \textbackslash \textbackslash\ when finishing one. You can decide not to do the same: it's a matter of style after all...
+
+    \section{Objectives and field of application}
+        Another section...
+
+    \section{Project description}
+        This is a long one :P
+
+    \section{Development plan}
+        We decided to use an enumeration for this one. You can choose something else though :P
+
+        \begin{enumerate}
+            \item \textbf{Hey there!}: Faa.
+            \item \textbf{Hey there!}: Fii.
+        \end{enumerate}
+
+    \section{Working resources}
+        Last section, yay!
+
+    % Shows the bibliography. Note we pass 'refs' to the \bibliography command, the same
+        % filename we used on line 17 without the *.bib extension.
+        % Note the \nocite{*} command shows bibliography entries we have NOT cited in the
+            % document. You can decide to use it or not, up to you!
+    \nocite{*}
+    \bibliographystyle{plain}
+    \bibliography{refs}{}
+\end{document}

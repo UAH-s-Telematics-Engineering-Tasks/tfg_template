@@ -1,0 +1,92 @@
+% Note the \input{} command is "equivalent" to copying and
+    % pasting the file's contents in the same place.
+\input{Preamble.tex}
+
+\begin{document}
+    % Use roman numerals until we issue \mainmatter
+    \frontmatter
+
+    % Avoid printing page numbers until we
+        % issue \pagestyle{headings}
+    \pagestyle{empty}
+
+    % Visual Cover
+        \includepdf[pages = 1]{Content/Covers.pdf}
+
+    % Textual Cover
+        \newgeometry{top = 2cm, left = 3cm, right = 2cm}
+            \input{Content/Front_matter/Text_cover.tex}
+        \restoregeometry
+
+    % Empty Page
+        \newpage
+            \null
+        \newpage
+
+    % ACKs
+        \newgeometry{top = 2cm}
+            \input{Content/Front_matter/ACKs.tex}
+        \restoregeometry
+
+    % Abstract
+        \input{Content/Front_matter/Abstract.tex}
+
+    % Spanish Abstract
+        \input{Content/Front_matter/Resumen.tex}
+
+    % Quote
+        \newgeometry{right = 3cm, top = 7.5cm}
+            % \epigraph{I heard a definition of an intellectual, that I thought was very interesting:
+            %     a man who takes more words than are necessary to tell more than he knows.}{\textit{Dwight D. Eisenhower}}
+            \epigraph{I only know that I know nothing.}{\textit{Socrates}}
+        \restoregeometry
+
+    % Begin printing page numbers
+    \pagestyle{headings}
+
+    % Tables of Contents
+        % Control the distance between the ToC's titles
+            % and the entries. These control the ToCs as
+            % they appear in order below.
+        \setlength{\cftaftertoctitleskip}{0.1cm}
+        \setlength{\cftafterloftitleskip}{0.1cm}
+        \setlength{\cftafterlottitleskip}{0.1cm}
+
+        % Print the ToCs:
+            % ToC -> Table of Contents
+            % LoF -> List of Figures
+            % LoT -> List of Tables
+        \newgeometry{top = 2.5cm}
+            \tableofcontents
+            \lstlistoflistings
+            \listoffigures
+            \listoftables
+        \restoregeometry
+
+    % Document Body
+        % One could also use \include{}: https://www.overleaf.com/learn/latex/Management_in_a_large_project
+
+        % Begin using normal numbering!
+        \mainmatter
+
+        % Include the chapters
+        \input{Content/Chapters/Ch_1.tex}
+
+    % Appendixes
+        % No kidding: https://dictionary.cambridge.org/dictionary/english/appendix)
+        \appendix
+        \input{Content/Appendixes/Planning_and_budget.tex}
+
+    % Bibliography
+        % The following causes non-cited entries to be included
+        \nocite{*}
+
+        % Make the Bibliography appear in the ToC
+        \addcontentsline{toc}{chapter}{Bibliography}
+
+        % Print the bibliography
+        \printbibliography[title = {Bibliography}]
+
+    % Back Cover
+        \includepdf[pages = 2]{Content/Covers.pdf}
+\end{document}

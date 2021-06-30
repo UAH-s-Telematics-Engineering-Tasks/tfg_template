@@ -1,0 +1,176 @@
+\subsubsection{Subnet.py}
+    This file defines a class representing an entire subnet. This class acts as the gateway through which bridges and nodes can be instantiated. In an effort to attain a firmer logical structure, instances of this class are the \textbf{only} means of adding more bridges and nodes to the network.\\
+
+    When a subnet is instantiated it will contain no nodes or bridges, these will be added over time. We would like to stress how, even though a subnet will keep track of the routers it contains, it will by no means control them. That is, routers will not be added to or deleted from a subnet through a subnet instance. These will be instead controlled from the net class we will delve into later.\\
+
+    A subnet's lifecycle is summarized by the following enumeration:\\
+
+    \begin{enumerate}
+        \item The subnet is instantiated.
+        \item Bridges and nodes are created and/or deleted through this instance.
+        \item The subnet is removed from the overall network instance when the network is being dismantled.
+        \item Upon deletion a subnet will remove all its associated bridges and nodes.
+    \end{enumerate}
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape\_sequences dictionary} containing \textit{ANSI escape sequences} enabling colored output.
+            \item \textbf{\texttt{sys}:} This module allows us to print error messages to \textit{STDERR} instead of \textit{STDOUT} so that they can be easily redirected later on if needed with \texttt{2>/path/to/log}.
+            \item \textbf{\texttt{subnet\_machines}:} This module will let us instantiate and add \texttt{k\_bridge\_inst}s and \texttt{d\_node\_inst}s to the subnets we create.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal\_esc ape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The d\_subnet Class}
+        This class represents an entire subnet. Note the \texttt{`d'} stands for docker, just like with the \texttt{d\_node} class. We would also like to mention that we decided to leverage \texttt{lists} instead of \texttt{dictionaries} for the attributes holding references to the different subnet components which we will analyze below. The reason behind it is that using a node or bridge name as a \texttt{dictionary} key when it is also an attribute of said instances seemed redundant. The reader might notice how the \texttt{get\_bridges()} method is missing. We purposefully decided not to define it given it did not prove to be necessary under any circumstances.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.subnet\_addr - string}:} subnet's address given as the network address as well as the subnet mask in \textit{CIDR} format.
+                \item \textbf{\texttt{self.bridges - list/k\_bridge\_inst}:} A \texttt{list} of the active bridges in the subnet. Our topologies only have a single bridge per subnet but we nonetheless decided to allow for more bridges within a subnet in case a user wanted to expand on our work.
+                \item \textbf{\texttt{self.nodes - list/d\_node\_inst}:} A \texttt{list} of the nodes belonging to this subnet.
+                \item \textbf{\texttt{self.routers - list/d\_router\_inst}:} A \texttt{list} containing references to the routers that have an interface belonging to this subnet.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{subnet - string:} The subnet's address.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just initialize the \texttt{self.subnet\_addr} with the passed parameter and the rest with empty \texttt{lists}.
+            \end{enumerate}
+
+        \subparagraph{The get\_subnet\_addr() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the subnet's address in \textit{CIDR} format.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_nodes() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{list/d\_node\_inst} containing the instances of the nodes belonging to this subnet.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_routers() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{list/d\_router\_inst} containing the instances of the routers with at least one interface belonging to this subnet.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The add\_node() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{node - d\_node\_inst:} The node we are to add to the subnet.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will add an \textbf{existing} node to this subnet. This method's main use is reconfiguring the state of the network when a node is moved.
+            \end{enumerate}
+
+        \subparagraph{The add\_router() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{node - d\_router\_inst:} The router we are to add to the subnet.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will add an \textbf{existing} router to this subnet. This method's main use is reconfiguring the state of the network when an entire subnet is moved.
+            \end{enumerate}
+
+        \subparagraph{The create\_bridge() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{name - string:} The name of the bridge we are to create.
+                \end{enumerate}
+                \item \textbf{Returns:} The created \texttt{k\_bridge\_inst} or \texttt{None} in case of failure.
+                \item \textbf{Description:} This method will create a ``real instance'' of a bridge together with the object logically representing it. The bridge's name is the passed parameter. It does so through the \texttt{ip link} command. A message will be printed on both success and failure.
+            \end{enumerate}
+
+        \subparagraph{The create\_node() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{name - string:} The name of the node we are to create.
+                \end{enumerate}
+                \item \textbf{Returns:} The created \texttt{d\_node\_inst} or \texttt{None} in case of failure.
+                \item \textbf{Description:} The method will just create a docker container and the associated \texttt{d\_node\_inst} which will be appended to the \texttt{self.nodes} attributes. The name for both the container and the instance will be the passed parameter.
+            \end{enumerate}
+
+        \subparagraph{The remove\_bridge() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{name - string:} The name of the bridge we are trying to remove.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will remove a bridge instance from the \texttt{self.bridges} attribute, thus removing the ``real instance'' in the process as well. A message will be printed upon both a successful and unsuccessful completion.
+            \end{enumerate}
+
+        \subparagraph{The remove\_node() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{name - string:} The name of the node we are trying to remove.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will remove a node instance from the \texttt{self.nodes} attribute, thus removing the ``real instance'' in the process as well. A message will be printed upon both a successful and unsuccessful completion.
+            \end{enumerate}
+
+        \subparagraph{The remove\_node\_instance() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{node\_inst - d\_node\_inst:} The node we are to remove.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will remove a node instance form the subnet's \texttt{self.nod es} attribute but it \textbf{will not} remove the node itself. It is extremely important to grasp this subtle difference. This method is invoked when moving nodes around the net and would not be strictly needed in a context where the virtualized network is totally static. It will help us maintain an accurate network representation upon network changes. If this method were not to exist it would imply that our network representation would deviate from the actual virtual network whenever we altered the topology.
+            \end{enumerate}
+
+        \subparagraph{The remove\_router() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                    \item \texttt{name - string:} The name of the router we are trying to remove.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will remove a router instance from the \texttt{self.routers} attribute. However, said router instance will always be referenced somewhere else. This implies that this deletion will not trigger the removal of the ``real instance''. Given this method is being called quite often, we decided not to print any messages related to the operation's outcome as they proved to be more of a nuisance than a helpful feature.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_subnet\_inst:} The actual subnet instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} Due to how we have implemented the destructors in both the \texttt{d\_node} and \texttt{k\_bridge} classes we can just empty the lists containing all the references to the subnet's elements. This will trigger the orderly deletion of every expendable component. This destructor is not explicitly needed: when an instance of the \texttt{d\_subnet} class is deleted, the attributes holding the references to the nodes and bridges will be deleted as well. That will in turn have the same effect as explicitly freeing all the attributes but we believe it is alwys better to be explicit when writing code tan relying on ``obscure'' mechanisms.
+            \end{enumerate}

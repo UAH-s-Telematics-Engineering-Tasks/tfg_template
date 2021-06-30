@@ -1,0 +1,30 @@
+\subsubsection{Veth.py}
+    When we began this project we decided to represent each \textit{veth} as its own object. This approach proved to be quite cumbersome once we implemented the functionality allowing the user to modify the network topology. At that point we decided to define the \texttt{interface} class and implement the functionality connecting \textit{veths} as a standalone function. Given an interface is the manifestation of a \textit{veth} once we move it to a different namespace we felt this slight change did not go against the pre-existing philosophy.\\
+
+    Like we mentioned before, we did not define a function altering the \textit{veth's} status (i.e. we will not disconnect and reconnect them). When moving nodes around we will altogether delete and create \textit{veths} as needed. We can work in such a manner because we  can rely on the kernel's interface management to a great extent. Given how \textit{veths} are implemented we can be sure that as soon as we remove one of its ends through \texttt{ip link} the associated termination will be seamlessly removed too. This allows for a ``fire and forget'' approach in the sense that we need not carry out the elaborate bookkeeping that we would otherwise have to. Stepping on functionality implemented by others is a great way to greatly simplify the code, so we decided to leverage it as long as we could be positive no unexpected behaviour would take place.\\
+
+    After the above discussion let us dive into how this crucial function is implemented. Please note we are now referring to a \textit{function} and not a \textit{method} because the former is not associated to a class whilst the latter is.\\
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape\_sequences dictionary} containing \textit{ANSI escape sequences} enabling colored output.
+            \item \textbf{\texttt{sys}:} This module allows us to print error messages to \textit{STDERR} instead of \textit{STDOUT} so that they can be easily redirected later on if needed with \texttt{2>/path/to/log}.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal \_escape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The connect\_veth\_end() Function}
+        \begin{enumerate}
+            \item \textbf{Parameters:}
+            \begin{enumerate}
+                \item \texttt{node - k\_bridge\_inst | d\_node\_inst | d\_router\_inst:} The network-aware machine we are to connect the \textit{veth} end to. Note the \texttt{'|'} character is to be read as \textit{OR}.
+                \item \texttt{veth\_name - string:} The name of the \textit{veth} end we are to connect to the network-aware machine specified by the \texttt{node} parameter.
+                \item \texttt{subnet - string - optional:} The subnet the connected \textit{veth} end will belong to in \textit{CIDR}. This parameter \textbf{must} be specified is the network-aware machine we are attaching the \textit{veth} to is either a node or a router.
+            \end{enumerate}
+            \item \textbf{Returns:} A \texttt{boolean} indicating whether the operation completed successfully (\texttt{True}) or failed \texttt{False}.
+            \item \textbf{Description:} This function will connect the \textit{veth} end specified by the \texttt{veth\_end} parameter to the network machine whose reference is passed through the \texttt{node} parameter. In case the latter is either a node or a router, the subnet the resulting interface will belong to is specified in the \texttt{subnet} parameter. This function relies on the \texttt{get\_type()} method we have defined for every class representing a network-aware machine to resolve how to proceed. The function prints a message informing about the outcome of the operation besides returning a \texttt{boolean} encoding the same information. Please note that attaching a \textit{veth} end to a bridge \textbf{will not} trigger the instantiation of an object whilst an \texttt{interface\_inst} will be created if it is attached to either a node or a router. What is more, this is the only method capable of creating \textit{veths}. This approach has proven to allow for faster changes throughout the codebase when they were required.
+        \end{enumerate}

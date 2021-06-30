@@ -1,0 +1,252 @@
+\subsubsection{Subnet\_Machines.py}
+    This file contains the class definitions for the elements belonging to a subnet: \textit{bridges} and \textit{nodes}. We would like to clarify that we refer to regular \textit{hosts} as \textit{nodes} interchangeably.\\
+
+    We have purposefully decided \textbf{not to consider} \textit{routers} as part of a subnet. The logic behind the decision is that a \textit{router} belongs to at least two subnets in our topologies. Thus, defining its class in a file whose context is that of a single subnet did not seem appropriate.\\
+
+    Once again, we should point out how an instance of the \texttt{k\_bridge} class \textbf{is not} the same thing as the actual \textit{bridge}, but they are intimately related. The following explains the lifecycle of both classes defined in this file.\\
+
+    \begin{enumerate}
+        \item The real instance, either a \textit{bridge} or a \textit{host}, is brought up.
+        \item The object representing said instance is created.
+        \item The object sits idle. Several of its parameters can be altered within this state.
+        \item At some point, the object will be dismantled.
+        \item The release of the object will trigger the removal of the associated real instance.
+    \end{enumerate}
+
+    \paragraph{Imported Libraries}
+        \begin{enumerate}
+            \item \textbf{\texttt{os}:} This module enables the execution of commands through a \textit{sh} shell through the \texttt{os.system()} method. One can check the shell being spawned is indeed \textit{sh} by running \texttt{\allowbreak os.system("echo \$0")} or by querying \cite{bib:man-system}.
+            \item \textbf{\texttt{constants}:} Grant access to the \texttt{\allowbreak terminal\_escape\_sequences dictionary} containing \textit{ANSI escape sequences} enabling colored output.
+            \item \textbf{\texttt{sys}:} This module allows us to print error messages to \textit{STDERR} instead of \textit{STDOUT} so that they can be easily redirected later on if needed with \texttt{2>/path/to/log}.
+            \item \textbf{\texttt{subprocess}:} This module enables the execution of commands through a shell \textbf{and} allows the caller to retrieve the command's output to \textit{STDOUT} on top of its return code. This will let us retrieve a container's associated \textit{PID}.
+            \item \textbf{\texttt{interface}:} This module will let us instantiate and add \texttt{interface\_inst} to the nodes we create.
+        \end{enumerate}
+
+    \paragraph{Global Variables}
+        \begin{enumerate}
+            \item \textbf{\texttt{\allowbreak t\_colors - dictionary/string/string}:} This is a synonym for the \texttt{\allowbreak terminal \_escape\_sequences dictionary} we me mentioned before. It is used within calls to \texttt{print()} so that we can alter the terminal text's color allowing for a more visual information representation.
+        \end{enumerate}
+
+    \paragraph{The k\_bridge Class}
+        This class represents a virtual bridge. Note the \texttt{`k'} stands for kernel as these bridges are part of the kernel itself.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.type - string}:} Object type identifier containing the \texttt{``bridge'' string} for bridges. It is used within functions to check the type of object it is currently dealing with.
+                \item \textbf{\texttt{self.name - string}:} Bridge's name.
+                \item \textbf{\texttt{self.up - boolean}:} \texttt{True} if the bridge is currently up (i.e. ``switched on''). \texttt{False} otherwise.
+                \item \textbf{\texttt{self.subnet - string}:} Bridge's associated subnet given as the network address for said subnet together with the subnet mask in \textit{CIDR} notation.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_birdge\_inst:} The actual bridge instance.
+                    \item \texttt{name - string:} The bridge's name.
+                    \item \texttt{subnet - string:} The subnet associated with this bridge.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will initialize the members of an \texttt{k\_bridge\_inst} and call the \texttt{\_activate\_bridge()} method.
+            \end{enumerate}
+
+        \subparagraph{The \_activate\_bridge() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} After the bridge has been instantiated it must be brought up so that it can be operated normally. We do so through the \texttt{ip link} command, printing a message on success. Once the bridge is activated, the \texttt{self.up} attribute will be set to \texttt{True}.
+            \end{enumerate}
+
+        \subparagraph{The get\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the bridge's name.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_type() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} The \texttt{``bridge'' string}.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_subnet() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the bridge's associated subnet in \textit{CIDR} format.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The remove() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method shuts the bridge down. It will check it is indeed activated before doing so in an effort to prevent errors provoked by calling \texttt{ip link} with incorrect parameters (i.e. such as by trying to shutdown a bridge that is already down). This method will print a message to \textit{STDOUT} informing whether the operation was a success or not.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - k\_bridge\_inst:} The actual bridge instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just call \texttt{remove()}.
+            \end{enumerate}
+
+    \paragraph{The d\_node Class}
+        This class represents a node implementing a virtual host. Note the \texttt{`d'} stands for docker.
+
+        \subparagraph{Class Attributes}
+            \begin{enumerate}
+                \item \textbf{\texttt{self.type - string}:} Object type identifier containing the \texttt{``node'' string} for nodes. It is used within functions to check the type of object it is currently dealing with.
+                \item \textbf{\texttt{self.name - string}:} Node's name.
+                \item \textbf{\texttt{self.pid - int}:} The associated container's \textit{PID}. It is used when linking the container's network namespace to \texttt{/var/run/netns} so that we can easily access it afterwards.
+                \item \textbf{\texttt{self.interfaces - list/interface\_inst}:}  A list containing the instances of the interfaces belonging to this node.
+            \end{enumerate}
+
+        \subparagraph{The Constructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                    \item \texttt{name - string:} The node's name.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just initialize several members with the passed parameters whilst assigning sane defaults to others. It leverages the power of the \texttt{docker inspect} command to find the associated container's \textit{PID}. It will also call \texttt{\_link\_net\_namespace()} to allow an easier handling of the container's namespace through the \texttt{ip} command. It finally calls \texttt{\_set\_hostname()} to configure the node's identity from the network's perspective.
+            \end{enumerate}
+
+        \subparagraph{The \_link\_net\_namespace() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will create a symbolic link to the container's network namespace under \texttt{/var/run/netns} where the \texttt{ip} command will ``look for'' existing named namespaces. This method leverages the \texttt{self.pid} attribute that is initialized in the constructor to find the original location of the container's namespace so that it can later be linked.
+            \end{enumerate}
+
+        \subparagraph{The \_set\_hostname() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will just set the container's hostname. It is essential to distinguish between the container's name and its hostname. The former is an identifier that only concerns docker, whilst the latter will be the machine's identifier from the point of view of the network. This method will make the latter the same as the former. What is more, this operation made us change the underscores (\texttt{\_}) in the original node names by hyphens (\texttt{-}): the former were not allowed on network hostnames.
+            \end{enumerate}
+
+        \subparagraph{The get\_name() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{string} containing the node's name.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_type() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} The \texttt{``node'' string}.
+                \item \textbf{Description:} Not applicable.
+            \end{enumerate}
+
+        \subparagraph{The get\_subnets() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{list/string} containing the different subnets this node is connected to in \textit{CIDR} format.
+                \item \textbf{Description:} This method will iterate over the \texttt{interface\_inst} contained in the \texttt{self.interfaces} attribute to then provide a list containing the subnets each of these \texttt{interface\_inst} belong to. Even though nodes will usually belong to a single subnet this method allows for a more extensible design that can accommodate for nodes belonging to different subnets in more complex topologies.
+            \end{enumerate}
+
+        \subparagraph{The get\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                    \item \texttt{subnet - string - optional:} Specifies the subnet for which an associated \texttt{interface\_inst} should be returned.
+                \end{enumerate}
+                \item \textbf{Returns:} The following are evaluated in order.
+                \begin{enumerate}
+                    \item A \texttt{list/interface\_inst} if the \texttt{subnet} parameter was not specified.
+                    \item An \texttt{interface\_inst} associated to the subnet specified in the \texttt{subnet} parameter.
+                    \item \texttt{None} if there is no interface associated with the subnet specified through the \texttt{subnet} parameter.
+                \end{enumerate}
+                \item \textbf{Description:} As seen on the \textbf{returns} section, the \texttt{subnet} parameter behaves like a switch. A \texttt{list} of \texttt{interface\_inst} will be returned if it is not specified by the caller. In case it is provided, it will return either an \texttt{interface\_inst} or \texttt{None} if there is no interface associated with the specified subnet.
+            \end{enumerate}
+
+        \subparagraph{The create\_interface() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                    \item \texttt{if\_name - string:} Name of the interface to create.
+                    \item \texttt{if\_subnet - string:} Subnet associated with the interface to create.
+                    \item \texttt{o\_if - boolean:} Flag indicating whether the interface to create should be allowed to ``see'' other subnets.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will instantiate a new interface and add it to the node's \texttt{self.interfaces list}. The method's parameters will be passed directly to the \texttt{interface} class constructor.
+            \end{enumerate}
+
+        \subparagraph{The reset\_interfaces() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method erases all the interfaces associated with the node through the \texttt{clear()} \cite{bib:python-datastructures} method of the \texttt{self.interfaces list}. This method will \textit{implicitly} call the destructor for each interface, thus effectively deleting the underlying \textit{veths}.
+            \end{enumerate}
+
+        \subparagraph{The stop() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} A \texttt{boolean} indicating whether the operation succeeded or not.
+                \item \textbf{Description:} This method is in charge of stopping the instance's associated docker container. We can do so thanks to the \texttt{docker stop} command. This method leverages a redirection to \texttt{/dev/null} so that the output generated by \texttt{docker stop} does not interfere with our own. This method will print a message both upon success and error.
+            \end{enumerate}
+
+        \subparagraph{The remove() Method}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method is in charge of entirely removing the associated container. It will call the \texttt{stop()} method as a container must be stopped before it can be removed through the \texttt{docker rm} command. First of all, the method will get rid of the interfaces as soon as possible so that, even if something goes wrong when deleting the container, it has no connection to a network that might still be alive. This will in fact isolate the container so that possible errors have no impact on the rest of the virtualized scenario. We will also delete the link to the container's network namespace living under \texttt{/var/run/netns}. As usual we will print information relative to the command's outcome.
+            \end{enumerate}
+
+        \subparagraph{The Destructor}
+            \begin{enumerate}
+                \item \textbf{Parameters:}
+                \begin{enumerate}
+                    \item \texttt{self - d\_node\_inst:} The actual node instance.
+                \end{enumerate}
+                \item \textbf{Returns:} Nothing.
+                \item \textbf{Description:} This method will call the \texttt{remove()} which will in turn delete the associated container. Given the definition of the \texttt{remove()} method this will later allow us to dismantle the entire network with a single order.
+            \end{enumerate}
